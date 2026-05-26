@@ -3661,6 +3661,12 @@ impl ProgramEscrowContract {
             .instance()
             .get(&PROGRAM_DATA)
             .unwrap_or_else(|| panic!("Program not initialized"));
+        
+        // Check that program is in Active status before allowing emergency withdraw
+        if program_data.status != ProgramStatus::Active {
+            panic!("{}", errors::ContractError::ProgramNotActive as u32);
+        }
+        
         let token_client = token::TokenClient::new(&env, &program_data.token_address);
 
         let contract_address = env.current_contract_address();
@@ -6258,6 +6264,18 @@ pub fn preview_split(
         if Self::check_paused(&env, symbol_short!("refund")) {
             panic!("Funds Paused");
         }
+        
+        // Check that program is in Active status before allowing refund
+        let program_data: ProgramData = env
+            .storage()
+            .instance()
+            .get(&PROGRAM_DATA)
+            .unwrap_or_else(|| panic!("Program not initialized"));
+        
+        if program_data.status != ProgramStatus::Active {
+            panic!("{}", errors::ContractError::ProgramNotActive as u32);
+        }
+        
         claim_period::cancel_claim(&env, &program_id, claim_id, &admin)
     }
 
