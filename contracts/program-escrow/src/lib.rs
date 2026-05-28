@@ -6029,3 +6029,7 @@ mod rbac_tests;
 #[cfg(test)]
 mod test_batch_receipts;
 #[cfg(test)] mod test_circuit_breaker_enforcement;
+#[cfg(test)]
+mod storage_collision_tests;
+#[cfg(test)]
+mod test_token_allowlist;
