@@ -4754,6 +4754,8 @@ impl ProgramEscrowContract {
     /// - Respects circuit breaker and threshold limits.
     pub fn batch_payout(env: Env, recipients: soroban_sdk::Vec<Address>, amounts: soroban_sdk::Vec<i128>) -> ProgramData {
         Self::batch_payout_internal(env, None, None, recipients, amounts)
+    }
+
     /// * `program_id`   - Program to configure.
     /// * `window_size`  - Window length in seconds (must be > 0).
     /// * `max_amount`   - Max total releasable in one window (must be >= 0).
@@ -4842,11 +4844,11 @@ impl ProgramEscrowContract {
     /// Return the spending limit configuration for a program, if set.
     pub fn get_program_spending_limit(
         env: Env,
-        caller: Address,
-        recipients: soroban_sdk::Vec<Address>,
-        amounts: soroban_sdk::Vec<i128>,
-    ) -> ProgramData {
-        Self::batch_payout_internal(env, Some(caller), None, recipients, amounts)
+        program_id: String,
+    ) -> Option<ProgramSpendingConfig> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::SpendingConfig(program_id))
     }
 
     /// Execute a batch payout guarded by an idempotency key.
@@ -4937,28 +4939,11 @@ impl ProgramEscrowContract {
         env.storage().persistent().set(&PAYOUT_IDEM_KEYS, &used_keys);
 
         result
-        program_id: String,
-    ) -> Option<ProgramSpendingConfig> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::SpendingConfig(program_id))
     }
 
     /// Return the current window state for a program's spending limit, if any.
     pub fn get_program_spending_state(
         env: Env,
-        caller: Option<Address>,
-        idempotency_key: Option<String>,
-        recipients: soroban_sdk::Vec<Address>,
-        amounts: soroban_sdk::Vec<i128>,
-    ) -> ProgramData {
-        // Validation precedence (deterministic ordering):
-        // 1. Reentrancy guard
-        // 2. Contract initialized
-        // 3. Paused (operational state)
-        // 4. Authorization
-        // 6. Business logic (sufficient balance)
-        // 7. Circuit breaker check
         program_id: String,
     ) -> Option<ProgramSpendingState> {
         env.storage()
@@ -6668,7 +6653,6 @@ impl ProgramEscrowContract {
 
         program_data
     }
-} // end impl ProgramEscrowContract
 
     pub fn single_payout_v2(
         env: Env,
@@ -7597,6 +7581,8 @@ impl ProgramEscrowContract {
 
 // #[cfg(test)]
 // mod test;
+
+
 #[cfg(test)]
 // mod test_pagination;
 // Pre-existing broken test modules excluded until their referenced types/methods are implemented:
